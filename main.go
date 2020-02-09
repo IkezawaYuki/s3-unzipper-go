@@ -8,6 +8,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"s3-unzipper-go/s3"
+	"s3-unzipper-go/zip"
 
 	"log"
 	"os"
@@ -58,6 +60,13 @@ func handler(ctx context.Context, s3event events.S3Event) error {
 	}))
 
 	downloader := s3.NewDownloader(sess, bucket, key, zipContentPath+tempZip)
+	downloadedZipPath, err := downloader.Download()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := zip.Unzip(downloadedZipPath, unzipContentPath); err != nil {
+		log.Fatal(err)
+	}
 
 	return nil
 }
