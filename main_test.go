@@ -15,7 +15,7 @@ import (
 
 const (
 	sampleFile = "sample.zip"
-	testFile   = "testdata" + sampleFile
+	testFile   = "testdata/" + sampleFile
 )
 
 var (
@@ -51,7 +51,9 @@ func setup() {
 		Region: aws.String(region)}),
 	)
 	svc := s3.New(sess)
+
 	destBucket = os.Getenv("UNZIPPED_ARTIFACT_BUCKET") + "-dev"
+	srcBucket = os.Getenv("ZIPPED_ARTIFACT_BUCKET") + "-dev"
 	for _, b := range []string{srcBucket, destBucket} {
 		if !backetExists(svc, b) {
 			_, err := svc.CreateBucket(&s3.CreateBucketInput{
@@ -62,6 +64,7 @@ func setup() {
 			}
 		}
 	}
+
 	file, err := os.Open(testFile)
 	if err != nil {
 		panic(err)
@@ -70,15 +73,14 @@ func setup() {
 
 	uploader := s3manager.NewUploader(sess)
 	_, err = uploader.Upload(&s3manager.UploadInput{
-		Body:   nil,
-		Bucket: nil,
-		Key:    nil,
+		Bucket: aws.String(srcBucket),
+		Key:    aws.String(sampleFile),
+		Body:   file,
 	})
 	if err != nil {
 		panic(err)
 	}
 }
-
 func teardown() {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(region),
@@ -105,7 +107,7 @@ func teardown() {
 }
 
 func backetExists(svc *s3.S3, bucket string) bool {
-	fmt.Println(bucket)
+	fmt.Println(bucket, "これがバケット")
 	input := &s3.HeadBucketInput{Bucket: aws.String(bucket)}
 
 	_, err := svc.HeadBucket(input)

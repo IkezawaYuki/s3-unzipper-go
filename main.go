@@ -42,6 +42,7 @@ func init() {
 		panic(err)
 	}
 	destBucket = os.Getenv("UNZIPPED_ARTIFACT_BUCKET")
+	fmt.Println(destBucket, "descbucket")
 }
 
 func main() {
