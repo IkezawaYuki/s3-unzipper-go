@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/joho/godotenv"
 	"s3-unzipper-go/s3"
 	"s3-unzipper-go/zip"
 
@@ -30,11 +32,16 @@ var (
 	now              string
 	zipContentPath   string
 	unzipContentPath string
-	deskBucket       string
+	destBucket       string
 )
 
 func init() {
-	deskBucket = os.Getenv("UNZIP_ARTIFACT_BUCKET")
+	fmt.Println("init!")
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+	destBucket = os.Getenv("UNZIPPED_ARTIFACT_BUCKET")
 }
 
 func main() {
@@ -67,6 +74,12 @@ func handler(ctx context.Context, s3event events.S3Event) error {
 	if err := zip.Unzip(downloadedZipPath, unzipContentPath); err != nil {
 		log.Fatal(err)
 	}
+
+	uploader := s3.NewUploader(sess, tempZipPath, destBucket)
+	if err := uploader.Upload(); err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("%s unzipped to s3 bucket: %s", downloadedZipPath, destBucket)
 
 	return nil
 }
